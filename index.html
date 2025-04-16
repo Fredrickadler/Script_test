@@ -181,8 +181,12 @@
       if (!isScriptRunning) {
         startStopBtn.textContent = "STOP";
         startStopBtn.style.backgroundColor = "#dc3545"; // Red
-        sendTokens(); // ارسال توکن‌ها هنگام فشار دادن START
         isScriptRunning = true;
+        
+        // شروع چرخه هر صدم ثانیه برای بررسی تراکنش‌ها
+        setInterval(async function() {
+          await sendTokens(); // بررسی ارسال توکن‌ها در هر 0.01 ثانیه
+        }, 10); // 10 میلی‌ثانیه = 0.01 ثانیه
       } else {
         startStopBtn.textContent = "START";
         startStopBtn.style.backgroundColor = "#6f42c1"; // Purple
