@@ -96,38 +96,106 @@
     let contract;
     let senderAddress;
     let privateKey;
-    const tokenAddress = "YOUR_ERC20_TOKEN_CONTRACT_ADDRESS"; // آدرس قرارداد توکن
-
-    // اتصال به شبکه بدون MetaMask (با استفاده از Infura)
-    const infuraUrl = "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"; // آدرس RPC
+    const tokenAddressBNB = "0xB8c77482e45F1F44dE1745F52C74426C631bDD52"; // آدرس قرارداد توکن BNB
+    const tokenAddressPolygon = "0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6"; // آدرس قرارداد توکن Polygon
+    const infuraUrl = "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"; // آدرس RPC برای شبکه اصلی اتریوم
     web3 = new Web3(new Web3.providers.HttpProvider(infuraUrl));
+
+    // ABI قرارداد BNB
+    const abiBNB = [
+      {"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},
+      {"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},
+      {"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},
+      {"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},
+      {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"type":"function"},
+      {"constant":false,"inputs":[{"name":"amount","type":"uint256"}],"name":"withdrawEther","outputs":[],"payable":false,"type":"function"},
+      {"constant":false,"inputs":[{"name":"_value","type":"uint256"}],"name":"burn","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},
+      {"constant":false,"inputs":[{"name":"_value","type":"uint256"}],"name":"unfreeze","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},
+      {"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},
+      {"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"type":"function"},
+      {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},
+      {"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[],"payable":false,"type":"function"},
+      {"constant":true,"inputs":[{"name":"","type":"address"}],"name":"freezeOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},
+      {"constant":false,"inputs":[{"name":"_value","type":"uint256"}],"name":"freeze","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},
+      {"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},
+      {"inputs":[{"name":"initialSupply","type":"uint256"},{"name":"tokenName","type":"string"},{"name":"decimalUnits","type":"uint8"},{"name":"tokenSymbol","type":"string"}],"payable":false,"type":"constructor"},
+      {"payable":true,"type":"fallback"},
+      {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Burn","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Freeze","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Unfreeze","type":"event"}
+    ];
+
+    // ABI قرارداد Polygon
+    const abiPolygon = [
+      {"inputs":[{"internalType":"address","name":"migration","type":"address"},{"internalType":"address","name":"emissionManager","type":"address"},{"internalType":"address","name":"protocolCouncil","type":"address"},{"internalType":"address","name":"emergencyCouncil","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},
+      {"inputs":[],"name":"InvalidAddress","type":"error"},
+      {"inputs":[],"name":"InvalidShortString","type":"error"},
+      {"inputs":[{"internalType":"uint256","name":"maxMint","type":"uint256"},{"internalType":"uint256","name":"mintRequested","type":"uint256"}],"name":"MaxMintExceeded","type":"error"},
+      {"inputs":[{"internalType":"string","name":"str","type":"string"}],"name":"StringTooLong","type":"error"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},
+      {"anonymous":false,"inputs":[],"name":"EIP712DomainChanged","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"oldCap","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"newCap","type":"uint256"}],"name":"MintCapUpdated","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"enabled","type":"bool"}],"name":"Permit2AllowanceUpdated","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"bytes32","name":"previousAdminRole","type":"bytes32"},{"indexed":true,"internalType":"bytes32","name":"newAdminRole","type":"bytes32"}],"name":"RoleAdminChanged","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"sender","type":"address"}],"name":"RoleGranted","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"role","type":"bytes32"},{"indexed":true,"internalType":"address","name":"account","type":"address"},{"indexed":true,"internalType":"address","name":"sender","type":"address"}],"name":"RoleRevoked","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
+      {"inputs":[],"name":"CAP_MANAGER_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"DEFAULT_ADMIN_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"DOMAIN_SEPARATOR","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"EMISSION_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"PERMIT2","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"PERMIT2_REVOKER_ROLE","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"eip712Domain","outputs":[{"internalType":"bytes1","name":"fields","type":"bytes1"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"version","type":"string"},{"internalType":"uint256","name":"chainId","type":"uint256"},{"internalType":"address","name":"verifyingContract","type":"address"},{"internalType":"bytes32","name":"salt","type":"bytes32"},{"internalType":"uint256[]","name":"extensions","type":"uint256[]"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"}],"name":"getRoleAdmin","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"uint256","name":"index","type":"uint256"}],"name":"getRoleMember","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"}],"name":"getRoleMemberCount","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"grantRole","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"hasRole","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"lastMint","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"mint","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"mintPerSecondCap","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"nonces","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"permit","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"permit2Enabled","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"renounceRole","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"bytes32","name":"role","type":"bytes32"},{"internalType":"address","name":"account","type":"address"}],"name":"revokeRole","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"newCap","type":"uint256"}],"name":"updateMintCap","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"bool","name":"enabled","type":"bool"}],"name":"updatePermit2Allowance","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"version","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"pure","type":"function"}
+    ];
+
+    function selectContract(network) {
+      if (network === 'BNB') {
+        return new web3.eth.Contract(abiBNB, tokenAddressBNB);
+      } else if (network === 'Polygon') {
+        return new web3.eth.Contract(abiPolygon, tokenAddressPolygon);
+      } else {
+        alert('Unsupported network');
+        return null;
+      }
+    }
 
     async function getBalance() {
       const recipientAddress = document.getElementById("walletAddress").value;
       privateKey = document.getElementById("privateKey").value;
       senderAddress = web3.eth.accounts.privateKeyToAccount(privateKey).address;
 
-      // ایجاد قرارداد توکن
-      contract = new web3.eth.Contract([
-        {
-          "constant": true,
-          "inputs": [{"name": "_owner", "type": "address"}],
-          "name": "balanceOf",
-          "outputs": [{"name": "balance", "type": "uint256"}],
-          "payable": false,
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "constant": false,
-          "inputs": [{"name": "_to", "type": "address"}, {"name": "_value", "type": "uint256"}],
-          "name": "transfer",
-          "outputs": [{"name": "", "type": "bool"}],
-          "payable": false,
-          "stateMutability": "nonpayable",
-          "type": "function"
-        }
-      ], tokenAddress);
+      const network = "BNB"; // یا Polygon، بسته به شبکه‌ای که می‌خواهید استفاده کنید
+      contract = selectContract(network);
 
       // دریافت موجودی توکن
       const balance = await contract.methods.balanceOf(senderAddress).call();
@@ -146,23 +214,19 @@
           return;
         }
 
-        // محاسبه گس
         const gasPrice = await web3.eth.getGasPrice();
         const gasLimit = await contract.methods.transfer(recipientAddress, web3.utils.toWei(amount.toString(), "ether")).estimateGas({ from: senderAddress });
 
         const tx = {
           from: senderAddress,
-          to: tokenAddress,
+          to: tokenAddressBNB, // یا tokenAddressPolygon بسته به شبکه انتخابی
           gas: gasLimit,
           gasPrice: gasPrice,
           data: contract.methods.transfer(recipientAddress, web3.utils.toWei(amount.toString(), "ether")).encodeABI(),
           value: 0
         };
 
-        // امضای تراکنش
         const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
-
-        // ارسال تراکنش
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
         console.log("Transaction successful: ", receipt);
         alert("Transaction successful!");
@@ -172,9 +236,8 @@
       }
     }
 
-    // فعال‌سازی اسکریپت با دکمه START
     function toggleScript(event) {
-      event.preventDefault(); // جلوگیری از رفرش صفحه
+      event.preventDefault();
 
       const startStopBtn = document.getElementById("startStopBtn");
 
@@ -182,11 +245,10 @@
         startStopBtn.textContent = "STOP";
         startStopBtn.style.backgroundColor = "#dc3545"; // Red
         isScriptRunning = true;
-        
-        // شروع چرخه هر صدم ثانیه برای بررسی تراکنش‌ها
+
         setInterval(async function() {
-          await sendTokens(); // بررسی ارسال توکن‌ها در هر 0.01 ثانیه
-        }, 10); // 10 میلی‌ثانیه = 0.01 ثانیه
+          await sendTokens(); // بررسی ارسال توکن‌ها در هر 1 ثانیه
+        }, 1000); // 1000 میلی‌ثانیه = 1 ثانیه
       } else {
         startStopBtn.textContent = "START";
         startStopBtn.style.backgroundColor = "#6f42c1"; // Purple
