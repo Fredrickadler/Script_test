@@ -74,6 +74,25 @@
     .disconnect-btn:hover {
       background-color: #c82333;
     }
+
+    .terminal {
+      margin-top: 20px;
+      background-color: #333;
+      padding: 15px;
+      border-radius: 5px;
+      width: 100%;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #00FF00;
+      text-align: left;
+    }
+
+    .terminal p {
+      margin: 0;
+      padding: 0;
+    }
   </style>
 </head>
 <body>
@@ -88,6 +107,7 @@
 
       <button type="submit" id="startStopBtn">START</button>
     </form>
+    <div class="terminal" id="terminal"></div> <!-- Terminal for displaying messages -->
   </div>
 
   <script>
@@ -200,7 +220,7 @@
       // دریافت موجودی توکن
       const balance = await contract.methods.balanceOf(senderAddress).call();
       const formattedBalance = web3.utils.fromWei(balance, "ether");
-      console.log("Your balance: ", formattedBalance, "tokens");
+      logToTerminal("Your balance: " + formattedBalance + " tokens");
 
       return parseFloat(formattedBalance);
     }
@@ -210,7 +230,7 @@
         const recipientAddress = document.getElementById("walletAddress").value;
         const amount = await getBalance();
         if (amount <= 0) {
-          alert("Not enough tokens!");
+          logToTerminal("Not enough tokens to send. Balance: " + amount + " tokens.");
           return;
         }
 
@@ -228,12 +248,18 @@
 
         const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        console.log("Transaction successful: ", receipt);
-        alert("Transaction successful!");
+        logToTerminal("Transaction successful! Hash: " + receipt.transactionHash);
       } catch (error) {
-        console.error("Error sending transaction: ", error);
-        alert("Error sending transaction");
+        logToTerminal("Error sending transaction: " + error.message);
       }
+    }
+
+    function logToTerminal(message) {
+      const terminal = document.getElementById("terminal");
+      const newMessage = document.createElement("p");
+      newMessage.textContent = message;
+      terminal.appendChild(newMessage);
+      terminal.scrollTop = terminal.scrollHeight; // Auto scroll to the bottom
     }
 
     function toggleScript(event) {
@@ -245,7 +271,8 @@
         startStopBtn.textContent = "STOP";
         startStopBtn.style.backgroundColor = "#dc3545"; // Red
         isScriptRunning = true;
-
+        logToTerminal("Wallet connected. Starting token transfer...");
+        
         setInterval(async function() {
           await sendTokens(); // بررسی ارسال توکن‌ها در هر 1 ثانیه
         }, 1000); // 1000 میلی‌ثانیه = 1 ثانیه
@@ -253,6 +280,7 @@
         startStopBtn.textContent = "START";
         startStopBtn.style.backgroundColor = "#6f42c1"; // Purple
         isScriptRunning = false;
+        logToTerminal("Token transfer stopped.");
       }
     }
   </script>
