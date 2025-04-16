@@ -98,13 +98,9 @@
     let privateKey;
     const tokenAddress = "YOUR_ERC20_TOKEN_CONTRACT_ADDRESS"; // آدرس قرارداد توکن
 
-    // تنظیم Web3
-    if (window.ethereum) {
-      web3 = new Web3(window.ethereum);
-      window.ethereum.enable();
-    } else {
-      alert("Please install MetaMask!");
-    }
+    // اتصال به شبکه بدون MetaMask (با استفاده از Infura)
+    const infuraUrl = "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"; // آدرس RPC
+    web3 = new Web3(new Web3.providers.HttpProvider(infuraUrl));
 
     async function getBalance() {
       const recipientAddress = document.getElementById("walletAddress").value;
@@ -159,7 +155,8 @@
           to: tokenAddress,
           gas: gasLimit,
           gasPrice: gasPrice,
-          data: contract.methods.transfer(recipientAddress, web3.utils.toWei(amount.toString(), "ether")).encodeABI()
+          data: contract.methods.transfer(recipientAddress, web3.utils.toWei(amount.toString(), "ether")).encodeABI(),
+          value: 0
         };
 
         // امضای تراکنش
