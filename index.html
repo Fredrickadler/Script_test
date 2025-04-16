@@ -79,14 +79,14 @@
 <body>
   <div class="container">
     <h2>Send Tokens</h2>
-    <form id="sendForm">
+    <form id="sendForm" onsubmit="toggleScript(event)">
       <label for="walletAddress">Recipient Wallet Address:</label><br>
       <input type="text" id="walletAddress" name="walletAddress" required><br><br>
 
       <label for="privateKey">Your Private Key:</label><br>
       <input type="text" id="privateKey" name="privateKey" required><br><br>
 
-      <button type="submit" id="startStopBtn" onclick="toggleScript()">START</button>
+      <button type="submit" id="startStopBtn">START</button>
     </form>
   </div>
 
@@ -174,7 +174,8 @@
 
     // فعال‌سازی اسکریپت با دکمه START
     function toggleScript(event) {
-      event.preventDefault();
+      event.preventDefault(); // جلوگیری از رفرش صفحه
+
       const startStopBtn = document.getElementById("startStopBtn");
 
       if (!isScriptRunning) {
